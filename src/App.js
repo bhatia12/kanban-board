@@ -32,7 +32,6 @@ export default function App() {
 
   const onDragEnd = (result) => {
     const { destination, source, draggableId } = result;
-
     if (!destination) return;
 
     if (
@@ -48,37 +47,80 @@ export default function App() {
       const newTaskIds = Array.from(start.taskIds);
       newTaskIds.splice(source.index, 1);
       newTaskIds.splice(destination.index, 0, draggableId);
+      const newColumn = { ...start, taskIds: newTaskIds };
 
-      const newColumn = {
-        ...start,
-        taskIds: newTaskIds,
-      };
-
-      setData({
-        ...data,
+      setData((prev) => ({
+        ...prev,
         columns: {
-          ...data.columns,
+          ...prev.columns,
           [newColumn.id]: newColumn,
         },
-      });
+      }));
+    } else {
+      const startTaskIds = Array.from(start.taskIds);
+      startTaskIds.splice(source.index, 1);
+      const finishTaskIds = Array.from(finish.taskIds);
+      finishTaskIds.splice(destination.index, 0, draggableId);
 
-      return;
+      setData((prev) => ({
+        ...prev,
+        columns: {
+          ...prev.columns,
+          [start.id]: { ...start, taskIds: startTaskIds },
+          [finish.id]: { ...finish, taskIds: finishTaskIds },
+        },
+      }));
     }
+  };
 
-    // Move across columns
-    const startTaskIds = Array.from(start.taskIds);
-    startTaskIds.splice(source.index, 1);
+  const addTask = (columnId, content) => {
+    const newTaskId = `task-${Date.now()}`;
+    const newTask = { id: newTaskId, content };
 
-    const finishTaskIds = Array.from(finish.taskIds);
-    finishTaskIds.splice(destination.index, 0, draggableId);
-
-    setData({
-      ...data,
-      columns: {
-        ...data.columns,
-        [start.id]: { ...start, taskIds: startTaskIds },
-        [finish.id]: { ...finish, taskIds: finishTaskIds },
+    setData((prev) => ({
+      ...prev,
+      tasks: {
+        ...prev.tasks,
+        [newTaskId]: newTask,
       },
+      columns: {
+        ...prev.columns,
+        [columnId]: {
+          ...prev.columns[columnId],
+          taskIds: [...prev.columns[columnId].taskIds, newTaskId],
+        },
+      },
+    }));
+  };
+
+  const editTask = (taskId, newContent) => {
+    setData((prev) => ({
+      ...prev,
+      tasks: {
+        ...prev.tasks,
+        [taskId]: { ...prev.tasks[taskId], content: newContent },
+      },
+    }));
+  };
+
+  const deleteTask = (columnId, taskId) => {
+    setData((prev) => {
+      const newTasks = { ...prev.tasks };
+      delete newTasks[taskId];
+
+      return {
+        ...prev,
+        tasks: newTasks,
+        columns: {
+          ...prev.columns,
+          [columnId]: {
+            ...prev.columns[columnId],
+            taskIds: prev.columns[columnId].taskIds.filter(
+              (id) => id !== taskId
+            ),
+          },
+        },
+      };
     });
   };
 
@@ -86,7 +128,12 @@ export default function App() {
     <div style={{ padding: 16 }}>
       <h2>Kanban Board</h2>
       <DragDropContext onDragEnd={onDragEnd}>
-        <Board data={data} />
+        <Board
+          data={data}
+          addTask={addTask}
+          editTask={editTask}
+          deleteTask={deleteTask}
+        />
       </DragDropContext>
     </div>
   );

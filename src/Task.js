@@ -1,29 +1,48 @@
-import React from "react";
+import React, { useState } from "react";
 import { Draggable } from "react-beautiful-dnd";
 
-const Task = ({ task, index }) => {
-  const handleCLick = () => {
-    console.log("task", task);
+const Task = ({ task, index, editTask, deleteTask }) => {
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(task.content);
+
+  const handleEdit = () => {
+    if (editing) {
+      editTask(task.id, value);
+    }
+    setEditing(!editing);
   };
+
   return (
     <Draggable draggableId={task.id} index={index}>
       {(provided, snapshot) => (
         <div
-          onClick={handleCLick}
           ref={provided.innerRef}
           {...provided.draggableProps}
           {...provided.dragHandleProps}
           style={{
-            userSelect: "none",
-            padding: 12,
+            background: snapshot.isDragging ? "#90caf9" : "#fff",
+            padding: 10,
             marginBottom: 8,
             borderRadius: 4,
-            backgroundColor: snapshot.isDragging ? "#90caf9" : "#fff",
-            boxShadow: "0 1px 2px rgba(0,0,0,0.2)",
+            boxShadow: "0 1px 2px rgba(0,0,0,0.15)",
             ...provided.draggableProps.style,
           }}
         >
-          {task.content}
+          {editing ? (
+            <input
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              style={{ width: "100%" }}
+            />
+          ) : (
+            <div>{task.content}</div>
+          )}
+          <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+            <button onClick={handleEdit}>{editing ? "Save" : "Edit"}</button>
+            <button onClick={deleteTask} style={{ color: "red" }}>
+              Delete
+            </button>
+          </div>
         </div>
       )}
     </Draggable>
